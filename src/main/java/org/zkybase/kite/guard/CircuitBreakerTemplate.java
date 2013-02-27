@@ -75,6 +75,7 @@ public class CircuitBreakerTemplate extends AbstractGuard {
 	private int exceptionThreshold = 5;
 	private long timeout = 30000L;
 	private List<Class<? extends Exception>> handledExceptions = new ArrayList<Class<? extends Exception>>();
+	private List<Class<? extends Exception>> whitelistedExceptions = new ArrayList<Class<? extends Exception>>();
 
 	// Volatile state
 	private volatile State state = State.CLOSED;
@@ -152,6 +153,15 @@ public class CircuitBreakerTemplate extends AbstractGuard {
 	public void setHandledExceptions(List<Class<? extends Exception>> exceptions) {
 		notNull(exceptions, "handledExceptions can't be null");
 		this.handledExceptions = exceptions;
+	}
+
+    public List<Class<? extends Exception>> getWhitelistedExceptions() {
+        return whitelistedExceptions;
+    }
+
+    public void setWhitelistedExceptions(List<Class<? extends Exception>> exceptions) {
+		notNull(exceptions, "whitelistedExceptions can't be null");
+		this.whitelistedExceptions = exceptions;
 	}
 
 	/**
@@ -281,11 +291,22 @@ public class CircuitBreakerTemplate extends AbstractGuard {
 
 	// Check the exception against the list of handled exceptions.
 	private boolean isHandledException(Class<? extends Exception> exceptionClass) {
-		for (Class<? extends Exception> handledExceptionClass : handledExceptions) {
+        if (isWhitelistedException(exceptionClass)) return false;
+
+        for (Class<? extends Exception> handledExceptionClass : handledExceptions) {
 			if (handledExceptionClass.isAssignableFrom(exceptionClass)) {
 				return true;
 			}
 		}
 		return false;
 	}
+
+    private boolean isWhitelistedException(Class<? extends Exception> exceptionClass) {
+        for (Class<? extends Exception> whitelistedExceptionClass : whitelistedExceptions) {
+            if (whitelistedExceptionClass.isAssignableFrom(exceptionClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
